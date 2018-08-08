@@ -1,62 +1,47 @@
 let BuilderBlock = {
-	props: ['block', 'index', 'columnsCount'],
+	props: ['block', 'index', 'columnsCount', 'pageUid', 'pageId'],
 	methods: {
 		onBlockInput(event) {
 			this.$emit("input", this.val)
 		},
 		showPreview() {
 			this.showingPreview = true
-			this.$nextTick(function () {
-				let postData = {
-					preview: this.block.preview,
-					blockcontent: this.block.content
-				}
-				this.$api.post('kirby-builder/preview', postData)
-				.then((r) => {
-					this.previewFrameContent = r
-					this.drawPreviewFrameContent(this.previewFrameContent)
-				})
-			});
+			let postData = {
+				preview: this.block.preview,
+				blockcontent: this.block.content,
+				blockUid: this.extendedUid
+			}
+			this.$api.post('kirby-builder/preview', postData)
+			.then((r) => {
+				this.previewStored = true
+			})
 		},
-		drawPreviewFrameContent(content) {
-			let previewFrame = this.$refs.frame
-			let previewDoc = previewFrame.contentWindow.document
-			previewDoc.open()
-			previewDoc.write(content)
-			previewDoc.close()
-
-			previewDoc.body.style.padding = 0
-			previewDoc.body.style.margin = 0
-			previewDoc.documentElement.style.padding = 0
-			previewDoc.documentElement.style.margin = 0
-
-			setTimeout(() => {
-				previewFrame.style.height =
-					Math.max(previewDoc.body.scrollHeight, previewDoc.body.offsetHeight, previewDoc.documentElement.clientHeight, previewDoc.documentElement.scrollHeight, previewDoc.documentElement.offsetHeight) + 'px'
-				this.showingForm = false
-			}, 30);
+		toggleExpand() {
+			this.expanded = (this.expanded) ? false : true
 		},
 		showForm() {
 			this.showingPreview = false
 			this.showingForm = true
-		}
-	},
-	watch: {
-		index() {
-			if (this.showingPreview) {
-				this.drawPreviewFrameContent(this.previewFrameContent)
-			}
+			this.previewHeight = 0
+		},
+		objectToGetParamString(obj) {
+			return Object.keys(obj).map(function (key) {
+				return key + '=' + obj[key];
+			}).join('&');
+		},
+		onPreviewLoaded(event) {
+			this.previewHeight = event.detail.height
+			this.showingForm = false
 		}
 	},
 	mounted() {
+		console.log(this.pageUid)
+		console.log(this.pageId)
 		this.$nextTick(function () {
 			this.pending = false
 		});
 		if (this.block.preview && this.showingPreview) {
 			this.showPreview(this.block.preview)
-		}
-		if (this.previewFrameContent) {
-			this.drawPreviewFrameContent(this.previewFrameContent)
 		}
 	},
 	data() {
@@ -64,26 +49,43 @@ let BuilderBlock = {
 			pending: true,
 			showingPreview: false,
 			showingForm: true,
-			previewFrameContent: null
+			previewFrameContent: null,
+			previewHeight: 0,
+			previewStored: false,
+			expanded: true
+		}
+	},
+	computed: {
+		extendedUid() {
+			return this.pageUid + '-' + this._uid
+		},
+		previewUrl() {
+			if (this.previewStored) {
+				return '/kirby-builder-preview/' + this.extendedUid + '?' + this.objectToGetParamString(this.block.preview) + '&pageid=' + this.pageId
+			} else {
+				return ''
+			}
 		}
 	},
 	template: `
 		<div 
 			class="kBuilder__block"
-			:class="{'kBuilder__block--pending': pending}"
+			:class="[{'kBuilder__block--pending': pending }, 'kBuilder__block--col-' + columnsCount]"
 		>
-			<div class="kBuilder__blockHeader">
+			<div 
+				:class="'kBuilder__blockHeader kBuilder__blockHeader--col-' + columnsCount" 
+			>
 				<k-icon 
 					type="sort" 
 					:class="'kBuilder__dragDropHandle kBuilder__dragDropHandle--col-' + columnsCount" 
 				/>
-				{{block.label}}
+				{{block.label}} {{_uid}}
 				<k-dropdown class="kBuilder__blockActions">
 					<k-button 
 						v-if="block.preview"
 						icon="preview" 
 						@click="showPreview()"
-						class="kBuilder__blockActionsButton"
+						class="kBuilder__blockActionsButton" 
 						:class="{'kBuilder__blockActionsButton--inactive': showingPreview}"
 					></k-button>
 					<k-button 
@@ -98,6 +100,11 @@ let BuilderBlock = {
 						@click="$refs['blockActions' + block.uniqueKey].toggle()"
 						class="kBuilder__blockActionsButton"
 					></k-button>
+					<k-button 
+						icon="angle-down" 
+						@click="toggleExpand"
+						class="kBuilder__blockActionsButton"
+					></k-button>
 					<k-dropdown-content :ref="'blockActions' + block.uniqueKey">
 						<k-dropdown-item icon="copy" @click="$emit('cloneBlock', index)">Clone</k-dropdown-item>
 						<k-dropdown-item icon="trash" @click="$emit('deleteBlock', index)">Delete</k-dropdown-item>
@@ -107,14 +114,16 @@ let BuilderBlock = {
 			<iframe 
 				ref="frame" 
 				class="kBuilder__previewFrame" 
-				src=""
-				v-if="block.preview && showingPreview"></iframe>
+				@loaded="onPreviewLoaded"
+				:style="{height: previewHeight + 'px'}"
+				:src="previewUrl"
+				v-if="block.preview && showingPreview && expanded"></iframe>
 			<k-fieldset 
 				class="kBuilder__blockForm"
 				v-model="block.content" 
 				:fields="block.fieldDefinition" 
 				v-on="$listeners"
-				v-if="showingForm"
+				v-if="showingForm && expanded"
 			/>
 		</div>
 	`
@@ -128,7 +137,9 @@ let Builder = {
 		columns: Number,
 		limit: Number,
 		label: String,
-		preview: Object
+		preview: Object,
+		pageId: String,
+		pageUid: String
 	},
 	components: { BuilderBlock },
 	methods: {
@@ -218,10 +229,8 @@ let Builder = {
 		}
 	},
 	mounted () {
-		console.log('1', this.fieldsets)
 		if(this.value){
 			this.value.forEach((block, index) => {
-				console.log(block, this.fieldsets[block._key])
 				this.blocks.push(
 					{
 						fieldDefinition: this.fieldsets[block._key].fields,
@@ -238,7 +247,7 @@ let Builder = {
 	},
 	template: `
 	<k-field 
-		:label="label"
+		:label="label"	
 		class="kBuilder"
 		:class="'kBuilder--col-' + columnsCount">
 		<k-draggable 
@@ -264,6 +273,8 @@ let Builder = {
 					:block="block" 
 					:index="index"
 					:columnsCount="columnsCount"
+					:pageUid="pageUid" 
+					:pageId="pageId" 
 					@input="onBlockInput" 
 					@cloneBlock="cloneBlock"
 					@deleteBlock="deleteBlock"/>

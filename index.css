@@ -47,14 +47,30 @@
   position: absolute;
   right: 0;
   top: 0;
+  display: flex;
+}
+.kBuilder__blockActionsDropDown{
+  display: inline-block;
+}
+.kBuilder__blockControl{
+  border-left: 1px solid #eaeaea;
+  border-bottom: 1px solid #eaeaea;
+  background-color: #fbfbfb;
+}
+.kBuilder__blockActionsButton:hover{
+  color: #797979
 }
 .kBuilder__blockActionsButton{
   width: 38px;
   height: 38px;
+  /* color: #16171a; */
+  color: #CCC;
+}
+.kBuilder__blockControl .kBuilder__blockActionsButton{
   color: #16171a;
 }
-.kBuilder__blockActionsButton--inactive{
-  color: #CCC;
+.kBuilder__blockActionsButton--active{
+  color: #16171a;
   pointer-events: none;
 }
 .kBuilder__blockForm{

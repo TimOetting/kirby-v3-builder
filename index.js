@@ -1,76 +1,40 @@
 let BuilderBlock = {
-	props: ['block', 'index', 'columnsCount', 'pageUid', 'pageId'],
-	methods: {
-		onBlockInput(event) {
-			this.$emit("input", this.val)
-		},
-		showPreview() {
-			this.showingPreview = true
-			let postData = {
-				preview: this.block.preview,
-				blockcontent: this.block.content,
-				blockUid: this.extendedUid
-			}
-			this.$api.post('kirby-builder/preview', postData)
-			.then((r) => {
-				this.previewStored = true
-			})
-		},
-		toggleExpand() {
-			this.expanded = (this.expanded) ? false : true
-		},
-		showFieldSet(fieldSetKey) {
-			this.showingPreview = false
-			this.activeFieldSet = fieldSetKey
-			this.previewHeight = 0
-		},
-		objectToGetParamString(obj) {
-			return Object.keys(obj).map(function (key) {
-				return key + '=' + obj[key];
-			}).join('&');
-		},
-		onPreviewLoaded(event) {
-			this.previewHeight = event.detail.height
-			this.activeFieldSet = null
-		},
-		newFieldSet(fieldSet, key, model, icon) {
-			return {
-				fields: fieldSet.fields,
-				key: key,
-				model: model,
-				icon: (icon) ? icon : null,
-			}
-		}
-	},
+	props: [
+		'block', 
+		'index', 
+		'columnsCount', 
+		'pageUid', 
+		'pageId',
+		'showPreview'
+	],
 	mounted() {
 		this.$nextTick(function () {
 			this.pending = false
 		});
-		if (this.block.preview && this.showingPreview) {
-			this.showPreview(this.block.preview)
+		if (this.block.preview && this.showPreview) {
+			this.displayPreview(this.block.preview)
 		} else {
 			this.showFieldSet(this.fieldSets[0].key)
-			console.log(this.activeFieldSet)
 		}
 	},
 	data() {
 		return {
 			pending: true,
-			showingPreview: false,
 			activeFieldSet: null,
+			expanded: true,
 			previewFrameContent: null,
 			previewHeight: 0,
 			previewStored: false,
-			expanded: true,
+			// showPreview: false
 		}
 	},
 	computed: {
 		extendedUid() {
-			return this.pageUid + '-' + this._uid
+			return this.paged + '-' + this._uid
 		},
 		previewUrl() {
 			if (this.previewStored) {
-				return '/kirby-builder-preview/' + this.extendedUid + '?' + this.objectToGetParamString(this.block.preview) + '&pageid=' + this.pageId
+				return '/kirby-builder-preview/' + this.extendedUid + '?' + this.objectToGetParams(this.block.preview) + '&pageid=' + this.pageId
 			} else {
 				return ''
 			}
@@ -85,51 +49,96 @@ let BuilderBlock = {
 					}
 				}
 			} else if (this.block.fields) {
-				fieldSets.push(this.newFieldSet(this.block, 'conty', this.block.content, 'edit'))
+				fieldSets.push(this.newFieldSet(this.block, 'content', this.block.content, 'edit'))
 			}
 			return fieldSets
+		},
+	},
+	methods: {
+		onBlockInput(event) {
+			this.$emit("input", this.val)
+		},
+		displayPreview() {
+			this.$emit('update:showPreview', true)
+			// this.showPreview = true
+			let previewData = {
+				preview: this.block.preview,
+				blockcontent: this.block.content,
+				blockUid: this.extendedUid
+			}
+			this.$api.post('kirby-builder/preview', previewData)
+				.then( () => {
+					this.previewStored = true
+				})
+		},
+		onPreviewLoaded(event) {
+			this.previewHeight = event.detail.height
+			this.activeFieldSet = null
+		},
+		toggleExpand() {
+			this.expanded = (this.expanded) ? false : true
+		},
+		showFieldSet(fieldSetKey) {
+			this.$emit('update:showPreview', false)
+			// this.showPreview = false
+			this.activeFieldSet = fieldSetKey
+			this.previewHeight = 0
+		},
+		newFieldSet(fieldSet, key, model, icon) {
+			let newFieldSet =  {
+				fields: fieldSet.fields,
+				key: key,
+				model: model,
+				icon: icon || null,
+			}
+			return newFieldSet
+		},
+		objectToGetParams(obj) {
+			return Object.keys(obj).map(function (key) {
+				return key + '=' + obj[key];
+			}).join('&');
 		}
 	},
 	template: `
-		<div 
-			class="kBuilder__block"
-			:class="[{'kBuilder__block--pending': pending }, 'kBuilder__block--col-' + columnsCount]"
-		>
-			<div 
-				:class="'kBuilder__blockHeader kBuilder__blockHeader--col-' + columnsCount" 
-			>
+		<div :class="['kBuilder__block', 'kBuilder__block--col-' + columnsCount, {'kBuilder__block--pending': pending }]">
+			<div :class="'kBuilder__blockHeader kBuilder__blockHeader--col-' + columnsCount" >
 				<k-icon 
 					type="sort" 
 					:class="'kBuilder__dragDropHandle kBuilder__dragDropHandle--col-' + columnsCount" 
 				/>
-				{{block.label}} {{_uid}}
+				{{block.label}} ||| {{_uid}}
 					<div class="kBuilder__blockActions">
 						<k-button 
 							v-if="block.preview"
 							icon="preview" 
-							@click="showPreview()"
+							@click="displayPreview()"
 							class="kBuilder__blockActionsButton" 
-							:class="{'kBuilder__blockActionsButton--active': showingPreview}"
-							></k-button>
+							:class="{'kBuilder__blockActionsButton--active': showPreview}"
+						></k-button>
 						<k-button 
-						v-if="block.preview"
-						v-for="fieldSet in fieldSets"
-						:key="'showFierldSetButton-' + _uid + fieldSet.key"
-						:icon="fieldSet.icon" 
-						@click="showFieldSet(fieldSet.key)"
-						class="kBuilder__blockActionsButton"
+							v-for="fieldSet in fieldSets"
+							:key="'showFierldSetButton-' + _uid + fieldSet.key"
+							:icon="fieldSet.icon" 
+							@click="showFieldSet(fieldSet.key)"
+							class="kBuilder__blockActionsButton"
 							:class="{'kBuilder__blockActionsButton--active': (activeFieldSet == fieldSet.key )}"
-							></k-button>
+						></k-button>
 						<div class="kBuilder__blockControl">
 							<k-dropdown class="kBuilder__blockActionsDropDown">
 								<k-button 
 									icon="dots" 
 									@click="$refs['blockActions' + block.uniqueKey].toggle()"
 									class="kBuilder__blockActionsButton"
-									></k-button>
+								></k-button>
 								<k-dropdown-content :ref="'blockActions' + block.uniqueKey">
-									<k-dropdown-item icon="copy" @click="$emit('cloneBlock', index)">Clone</k-dropdown-item>
-									<k-dropdown-item icon="trash" @click="$emit('deleteBlock', index)">Delete</k-dropdown-item>
+									<k-dropdown-item 
+										icon="copy" 
+										@click="$emit('cloneBlock', index)"
+									>Clone</k-dropdown-item>
+									<k-dropdown-item 
+										icon="trash" 
+										@click="$emit('deleteBlock', index)"
+									>Delete</k-dropdown-item>
 								</k-dropdown-content>
 							</k-dropdown>	
 							<k-button 
@@ -140,117 +149,69 @@ let BuilderBlock = {
 						</div>
 					</div>
 			</div>
-			<iframe 
-				ref="frame" 
-				class="kBuilder__previewFrame" 
-				@loaded="onPreviewLoaded"
-				:style="{height: previewHeight + 'px'}"
-				:src="previewUrl"
-				v-if="block.preview && showingPreview && expanded"></iframe>
-			<k-fieldset 
-				v-for="fieldSet in fieldSets"
-				v-if="expanded && (activeFieldSet == fieldSet.key)" 
-				class="kBuilder__blockForm"
-				v-model="fieldSet.model" 
-				:fields="fieldSet.fields" 
-				v-on="$listeners"
-				:key="fieldSet.key + _uid" 
-			/>
+			<div 
+				class="kBuilder__blockContent"
+				v-show="expanded"
+			>
+				<iframe 
+					v-if="block.preview && showPreview"
+					class="kBuilder__previewFrame" 
+					@loaded="onPreviewLoaded"
+					:style="{height: previewHeight + 'px'}"
+					:src="previewUrl"
+				></iframe>
+				<k-fieldset 
+					v-if="(activeFieldSet === fieldSet.key)" 
+					v-for="fieldSet in fieldSets"
+					class="kBuilder__blockForm"
+					v-model="fieldSet.model" 
+					:value="{}" 
+					:fields="fieldSet.fields" 
+					v-on="$listeners"
+					:key="fieldSet.key + _uid" 
+				/>
+			</div>
 		</div>
 	`
 }
 
-let Builder = {
+let BuilderField = {
 	props: {
 		value: String,
-		additional: String,
 		fieldsets: Object,
 		columns: Number,
 		limit: Number,
 		label: String,
 		preview: Object,
 		pageId: String,
-		pageUid: String
+		pageUid: String,
 	},
 	components: { BuilderBlock },
-	methods: {
-		onBlockInput(event) {
-			this.$emit("input", this.val);
-		},
-		onMoveBlock(event) {
-			this.$emit("input", this.val);
-		},
-		onMove(event) {
-			//Prevent sorting behind last element that contains the add button
-			return event.relatedContext.index != this.blocks.length + 1
-		},
-		onDragStart(event) {
-			this.drag = true
-			let itemPreviewFrames = event.item.querySelectorAll('.kBuilder__previewFrame')
-			let clonePreviewFrames = document.querySelectorAll('.sortable-drag .kBuilder__previewFrame')
-			itemPreviewFrames.forEach((itemPreviewFrame, index) => {
-				let itemPreviewFrameContent = itemPreviewFrame.contentWindow.document.documentElement.innerHTML
-				let clonePreviewFrameDocument = clonePreviewFrames[index].contentWindow.document
-				clonePreviewFrameDocument.open()
-				clonePreviewFrameDocument.write(itemPreviewFrameContent)
-				clonePreviewFrameDocument.close()
-			});
-		},
-		openBlockSelection(position) {
-			this.$refs.dialog.open()
-			this.addPosition = position
-		},
-		addElement(key) {
-			let position = (this.addPosition != null) ? this.addPosition : this.blocks.length 
-			let fieldSet = this.fieldsets[key]
-			let newBlock = {
-				fields: fieldSet.fields ? fieldSet.fields : null,
-				tabs: fieldSet.tabs ? fieldSet.tabs : null,
-				blockKey: key,
-				tabbed: typeof fieldSet.tabs != undefined,
-				content: this.getBlankContent(key, fieldSet),
-				label: fieldSet.label,
-				uniqueKey: this.lastUniqueKey++,
-				preview: fieldSet.preview
-			}
-			this.blocks.splice(position, 0, JSON.parse(JSON.stringify(newBlock)))
-			this.$refs.dialog.close()
-			this.addPosition = null
-		},
-		getBlankContent(key, fieldSet) {
-			let content = {'_key': key}
-			if (fieldSet.fields) {
-				Object.keys(fieldSet.fields).forEach(fieldName => {
-					content[fieldName] = ''
-				})
-			} else if (fieldSet.tabs) {
-				for (const tabName in fieldSet.tabs) {
-					content[tabName] = {}
-					// if (fieldSet.tabs.hasOwnProperty(tabName)) {
-					// 	const tab = fieldSet.tabs[tabName];
+	mounted() {
+		console.log('mounted blocks', this.blocks.length);
 
-						// Object.keys(tab.fields).forEach(fieldName => {
-						// 	tab.fields[fieldName] = ''
-						// })
-						// Object.keys(fields).forEach(fieldName => {
-						// 	content[tabName][fieldName] = ''
-						// })
-					// }
-				}
-			}
-			return content
-		},
-		// getFieldDefinition(fieldSet) {
-		// 	return (fieldSet.fields) ? fieldSet.fields : fieldSet.tabs
-		// },
-		cloneBlock(index) {
-			this.blocks.splice(index + 1, 0, JSON.parse(JSON.stringify(this.blocks[index])))
-			this.blocks[index + 1].uniqueKey = this.lastUniqueKey++
-			this.$emit("input", this.val);
-		},
-		deleteBlock(index) {
-			this.blocks.splice(index, 1);
-			this.$emit("input", this.val);
+		if(this.value){
+			this.value.forEach((block, index) => {
+				let fieldSet = this.fieldsets[block._key]
+				this.blocks.push( this.newBlock(fieldSet, block._key, block, index))
+			});
+			console.log('blocks', this.blocks);
+			this.lastUniqueKey = this.value.length
+		}
+		console.log('mounted blocks2', this.blocks.length);
+	},
+	data () {
+		return {
+			// fieldDefinition: {},
+			blocks: [],
+			toggle: true,
+			targetPosition: null,
+			lastUniqueKey: 0,
+			dataField: {
+				label: 'date label',
+				type: 'date'
+			},
+			dateValue: null
 		}
 	},
 	computed: {
@@ -265,42 +226,72 @@ let Builder = {
 		},
 		blockCount () {
 			return this.blocks.length
-		}
+		},
 	},
-	data () {
-		return {
-			// fieldDefinition: {},
-			blocks: [],
-			toggle: true,
-			addPosition: null,
-			lastUniqueKey: 0,
-			dataField: {
-				label: 'date label',
-				type: 'date'
-			},
-			dateValue: null
-		}
-	},
-	mounted () {
-		console.log('mounty mound')
-		if(this.value){
-			this.value.forEach((block, index) => {
-				let fieldSet = this.fieldsets[block._key]
-				this.blocks.push(
-					{
-						fields: fieldSet.fields ? fieldSet.fields : null,
-						tabs: fieldSet.tabs ? fieldSet.tabs : null,
-						// fieldDefinition: this.getFieldDefinition(fieldSet),
-						blockKey: block._key,
-						content: block,
-						label: fieldSet.label,
-						uniqueKey: index,
-						tabbed: typeof fieldSet.tabs != "undefined",
-						preview: fieldSet.preview
+	methods: {
+		onBlockInput(event) {
+			this.$emit("input", this.val);
+		},
+		onBlockMoved(event) {
+			this.$emit("input", this.val);
+		},
+		onMove(event) {
+			//Prevent sorting behind last element that contains the add button
+			return event.relatedContext.index != this.blocks.length + 1
+		},
+		openBlockSelection(position) {
+			this.$refs.dialog.open()
+			this.targetPosition = position
+		},
+		addBlock(key) {
+			let position = this.targetPosition || this.blocks.length 
+			let fieldSet = this.fieldsets[key]
+			let newBlock = this.newBlock(fieldSet, key, this.getBlankContent(key, fieldSet), this.lastUniqueKey++)
+			this.blocks.splice(position, 0, JSON.parse(JSON.stringify(newBlock)))
+			this.$refs.dialog.close()
+			this.targetPosition = null
+			this.$emit("input", this.val);
+		},
+		getBlankContent(key, fieldSet) {
+			let content = {'_key': key}
+			if (fieldSet.fields) {
+				Object.keys(fieldSet.fields).forEach(fieldName => {
+					content[fieldName] = fieldSet.fields[fieldName].value || ''
+				})
+			} else if (fieldSet.tabs) {
+				for (const tabName in fieldSet.tabs) {
+					content[tabName] = {}
+					if (fieldSet.tabs.hasOwnProperty(tabName)) {
+						const tab = fieldSet.tabs[tabName];
+						Object.keys(tab.fields).forEach(fieldName => {
+							content[tabName][fieldName] = tab.fields[fieldName].value || ''
+						})
 					}
-				)
-			});
-			this.lastUniqueKey = this.value.length
+				}
+			}
+			return content
+		},
+		cloneBlock(index) {
+			const clone = JSON.parse(JSON.stringify(this.blocks[index]))
+			this.blocks.splice(index + 1, 0, clone)
+			this.blocks[index + 1].uniqueKey = this.lastUniqueKey++
+			this.$emit("input", this.val);
+		},
+		deleteBlock(index) {
+			this.blocks.splice(index, 1);
+			this.$emit("input", this.val);
+		},
+		newBlock(fieldSet, key, content, uniqueKey){
+			return {
+				fields: fieldSet.fields ? fieldSet.fields : null,
+				tabs: fieldSet.tabs ? fieldSet.tabs : null,
+				blockKey: key,
+				content: content,
+				label: fieldSet.label,
+				uniqueKey: uniqueKey,
+				preview: fieldSet.preview,
+				showPreview: false
+			}
 		}
 	},
 	template: `
@@ -310,10 +301,9 @@ let Builder = {
 		:class="'kBuilder--col-' + columnsCount">
 		<k-draggable 
 			class="kBuilder__blocks k-grid" 
-			@start="onDragStart" 
 			@end="drag=false" 
 			v-model="blocks"
-			@update="onMoveBlock"
+			@update="onBlockMoved"
 			:move="onMove"
 			:options="{ clone: true, forceFallback: true, handle: '.kBuilder__dragDropHandle', scroll: true }"
 		>
@@ -333,6 +323,7 @@ let Builder = {
 					:columnsCount="columnsCount"
 					:pageUid="pageUid" 
 					:pageId="pageId" 
+					:showPreview.sync="block.showPreview" 
 					@input="onBlockInput" 
 					@cloneBlock="cloneBlock"
 					@deleteBlock="deleteBlock"/>
@@ -361,7 +352,7 @@ let Builder = {
 				class="kBuilder__addBlockButton"
 				v-for="(value, key) in fieldsets" 
 				:key="key" 
-				@click="addElement(key)"
+				@click="addBlock(key)"
 				:text="value.label" />
 			</k-list>
 		</k-dialog>
@@ -371,6 +362,6 @@ let Builder = {
 
 panel.plugin("timoetting/k-builder", {
 	fields: {
-		builder: Builder
+		builder: BuilderField
 	}
 });

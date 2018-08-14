@@ -1,25 +1,50 @@
 <?php
 
+use Kirby\Form\Form;
 use Kirby\Cms\Blueprint;
 
 Kirby::plugin('timoetting/testfield', [
   'fields' => [
     'builder' => [
       'props' => [
-          'value' => function ($value = null) {
-            return Yaml::decode($value);
-          },
-          'fieldsets' => function ($fieldSets = null) {
-            $fieldSets = Yaml::decode($fieldSets);
-            $fieldSets = extendRecursively($fieldSets);
-            return $fieldSets;
-          },
-          'pageUid' => function () {
-            return $this->model()->uid();
-          },
-          'pageId' => function () {
-            return $this->model()->id();
-          },
+        'pageUid' => function () {
+          return $this->model()->uid();
+        },
+        'pageId' => function () {
+          return $this->model()->id();
+        }
+      ],
+      'computed' => [
+        'fieldsets' => function () {
+          $fieldSets = Yaml::decode($this->props['fieldsets']);
+
+          $fieldSets = $this->extendRecursively($fieldSets);
+          
+          return $fieldSets;
+        },
+        'value' => function () {
+          $values = Yaml::decode($this->props['value']);
+          return $values;
+        },
+      ],
+      'methods' => [
+        'extendRecursively' => function ($properties, $isField = false) {
+          foreach ($properties as $propertyName => $property) {
+            if(is_array($property)){
+              $properties[$propertyName] = Blueprint::extend($property);
+              $properties[$propertyName] = $this->extendRecursively($properties[$propertyName], ($propertyName == 'fields'));
+            }
+          }
+          if ($isField) {
+            $fieldForm = new Form(array_merge([
+              'fields' => $properties,
+              'model'  => $this->data['model'] ?? null
+            ], $this->data));
+            $values = $fieldForm->values();
+            $properties = $fieldForm->fields()->toArray();
+          }
+          return $properties;
+        }
       ],
     ],
   ],
@@ -71,28 +96,8 @@ Kirby::plugin('timoetting/testfield', [
         return $responsePage;
       }
     ],
-    [
-      'pattern' => 'test',
-      'method' => 'GET',
-      'action'  => function () {
-        dump(kirby()->session()->data());
-      }
-    ]
-  ] ,   
+  ],   
   'templates' => [
     'snippet-wrapper' => __DIR__ . '/templates/snippet-wrapper.php'
-  ],
-  'panel' => [
-    'js' => 'assets/css/panel.js'
   ]
 ]);
-
-function extendRecursively($fields) {
-  foreach ($fields as $fieldName => $field) {
-    if(is_array($field)){
-      $fields[$fieldName] = Blueprint::extend($field);
-      $fields[$fieldName] = extendRecursively($fields[$fieldName]);
-    }
-  }
-  return $fields;
-}

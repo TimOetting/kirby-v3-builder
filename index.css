@@ -27,7 +27,9 @@
   transform: translateY(5%);
 }
 .kBuilder__block .kBuilder__block,
-.kBuilder__block .k-structure{
+.kBuilder__block .k-structure,
+.kBuilder__block .k-card,
+.kBuilder__block .k-list-item{
   box-shadow: 0 2px 5px rgba(22,23,26,.15), 0 0 0 1px rgba(22,23,26,.05)
 }
 .kBuilder__block .k-structure{
@@ -56,6 +58,7 @@
   border-left: 1px solid #eaeaea;
   border-bottom: 1px solid #eaeaea;
   background-color: #fbfbfb;
+  height: 38px;
 }
 .kBuilder__blockActionsButton:hover{
   color: #797979
@@ -176,6 +179,10 @@ kBuilder__block:hover .kBuilder__dragDropHandle--col-1{
   display: block;
 }
 .kBuilder__previewFrame--hidden{
+  display: none;
+}
+
+.kBuilder__blockContent--hidden{
   display: none;
 }
 

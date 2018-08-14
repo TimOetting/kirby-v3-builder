@@ -1,6 +1,6 @@
 # Kirby Builder Beta for Kirby v3
 
-To quickly get an example including the previews of the builder working, copy the files inside the `sandbox` folder into the respective folders and a the following field declaration to some blueprint:
+To quickly get an example including the previews of the builder working, copy the files inside the `sandbox` folder into the respective folders and add the following field declaration to a blueprint:
 
 ```
 mybuilder:

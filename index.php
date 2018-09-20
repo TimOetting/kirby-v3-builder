@@ -31,8 +31,7 @@ Kirby::plugin('timoetting/testfield', [
         'extendRecursively' => function ($properties, $isField = false) {
           foreach ($properties as $propertyName => $property) {
             if(is_array($property)){
-              $blueprint = new Blueprint(['model' => 'null']); // We need a Blueprint instance to get access to blueprint->extend()
-              $properties[$propertyName] = $blueprint->extend($property);
+              $properties[$propertyName] = $this->data['model']->blueprint()->extend($property);
               $properties[$propertyName] = $this->extendRecursively($properties[$propertyName], ($propertyName == 'fields'));
             }
           }

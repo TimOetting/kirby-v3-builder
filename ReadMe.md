@@ -10,7 +10,6 @@ mybuilder:
   fieldsets:
     bodytext:
       label: Text Block (without preview but with tabs)
-      snippet: sections/bodytext
       tabs:
         content:
           label: Content

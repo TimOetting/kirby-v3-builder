@@ -208,13 +208,13 @@ export default {
       this.$emit("input", this.val);
     },
     removeProperty(obj, property) {
-      for (prop in obj) {
+      Object.keys(obj).forEach( (prop) => {
         if (prop === property) {
           delete obj[prop]
         } else if (typeof obj[prop] === 'object') {
           this.removeProperty(obj[prop], property)
         }
-      }
+      })
     },
     deleteBlock(index) {
       this.clearLocalUiStates(this.blocks[index])

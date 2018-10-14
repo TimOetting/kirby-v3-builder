@@ -24,7 +24,7 @@
             :key="'showFierldSetButton-' + _uid + fieldSet.key"
             :icon="tabIcon(fieldSet.icon)" 
             :image="tabImage(fieldSet.icon)"
-            @click="showFieldSet(fieldSet.key)"
+            @click="displayFieldSet(fieldSet.key); toggleExpand(true)"
             class="kBuilderBlock__actionsButton"
             :class="{'kBuilderBlock__actionsButton--active': (activeFieldSet == fieldSet.key && expanded )}"
           >{{fieldSet.label}}</k-button>
@@ -117,7 +117,7 @@ export default {
     if (this.block.preview && this.showPreview) {
       this.displayPreview(this.block.preview)
     } else {
-      this.showFieldSet(this.activeFieldSet)
+      this.displayFieldSet(this.activeFieldSet)
     }
     if (this.block.isNew) {
       this.$emit('input')
@@ -181,19 +181,23 @@ export default {
         })
       this.storeLocalUiState()
     },
-    showFieldSet(fieldSetKey) {
+    displayFieldSet(fieldSetKey) {
       this.showPreview = false
       this.activeFieldSet = fieldSetKey
       this.previewHeight = 0
-      this.expanded = true
+      // this.expanded = true
       this.storeLocalUiState()
     },
     onPreviewLoaded(event) {
       this.previewHeight = event.detail.height
       this.activeFieldSet = null
     },
-    toggleExpand() {
-      this.expanded = (this.expanded) ? false : true
+    toggleExpand(expanded) {
+      if (typeof expanded === 'boolean') {
+        this.expanded = expanded
+      } else {
+        this.expanded = (this.expanded) ? false : true
+      }
       this.storeLocalUiState()
     },
     newFieldSet(fieldSet, key, model, icon, label) {

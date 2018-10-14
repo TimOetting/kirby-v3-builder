@@ -202,17 +202,18 @@ export default {
     },
     cloneBlock(index) {
       let clone = JSON.parse(JSON.stringify(this.blocks[index]))
-      this.removeProperty(clone.content, '_uid')
+      clone.isNew = true
+      this.deepRemoveProperty(clone.content, '_uid')
       this.blocks.splice(index + 1, 0, clone)
       this.blocks[index + 1].uniqueKey = this.lastUniqueKey++
       this.$emit("input", this.val);
     },
-    removeProperty(obj, property) {
+    deepRemoveProperty(obj, property) {
       Object.keys(obj).forEach( (prop) => {
         if (prop === property) {
           delete obj[prop]
         } else if (typeof obj[prop] === 'object') {
-          this.removeProperty(obj[prop], property)
+          this.deepRemoveProperty(obj[prop], property)
         }
       })
     },

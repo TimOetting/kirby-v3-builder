@@ -155,6 +155,7 @@ export default {
           if (this.block.tabs.hasOwnProperty(tabKey)) {
             const tab = this.block.tabs[tabKey];
             fieldSets.push(this.newFieldSet(tab, tabKey, this.block.content[tabKey]))
+            // fieldSets.push(this.newFieldSet(tab, tabKey, this.block.content))
           }
         }
       } else if (this.block.fields) {
@@ -185,7 +186,6 @@ export default {
       this.showPreview = false
       this.activeFieldSet = fieldSetKey
       this.previewHeight = 0
-      // this.expanded = true
       this.storeLocalUiState()
     },
     onPreviewLoaded(event) {

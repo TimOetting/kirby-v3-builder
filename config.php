@@ -110,7 +110,15 @@ Kirby::plugin('timoetting/testfield', [
         return $responsePage;
       }
     ],
-  ],   
+  ], 
+  'translations' => [
+    'en' => [
+      'builder.clone' => 'Clone',
+    ],
+    'fr' => [
+      'builder.clone' => 'Dupliquer',
+    ],
+  ],  
   'templates' => [
     'snippet-wrapper' => __DIR__ . '/templates/snippet-wrapper.php'
   ]

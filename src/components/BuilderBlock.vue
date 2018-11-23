@@ -47,11 +47,11 @@
               <k-dropdown-item 
                 icon="copy" 
                 @click="$emit('cloneBlock', index)"
-              >Clone</k-dropdown-item>
+              >{{ $t('builder.clone') }}</k-dropdown-item>
               <k-dropdown-item 
                 icon="trash" 
                 @click="$emit('deleteBlock', index)"
-              >Delete</k-dropdown-item>
+              >{{ $t('delete') }}</k-dropdown-item>
             </k-dropdown-content>
           </k-dropdown>	
         </div>
@@ -159,7 +159,7 @@ export default {
           }
         }
       } else if (this.block.fields) {
-        fieldSets.push(this.newFieldSet(this.block, 'content', this.block.content, 'edit', 'Edit'))
+        fieldSets.push(this.newFieldSet(this.block, 'content', this.block.content, 'edit', this.$t('edit')))
       }
       return fieldSets
     },

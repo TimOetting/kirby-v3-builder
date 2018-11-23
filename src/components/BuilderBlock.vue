@@ -143,7 +143,7 @@ export default {
     },
     previewUrl() {
       if (this.previewStored) {
-        return '/kirby-builder-preview/' + this.extendedUid + '?' + this.objectToGetParams(this.block.preview) + '&pageid=' + this.pageId
+        return 'kirby-builder-preview/' + this.extendedUid + '?' + this.objectToGetParams(this.block.preview) + '&pageid=' + this.pageId
       } else {
         return null
       }

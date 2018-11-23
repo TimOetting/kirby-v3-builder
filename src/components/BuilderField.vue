@@ -254,7 +254,7 @@ export default {
 .kBuilder__addButton{
   width: 100%;
   background-color: transparent;
-  padding: calc(.625rem * 4) .75rem;
+  padding: 1.5rem .75rem;
   border: 1px dashed #CCC;
   transition: background-color .3s, border-color .3s;
 }

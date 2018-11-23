@@ -1,5 +1,5 @@
 <template>
-  <div :class="['kBuilderBlock', 'kBuilderBlock--col-' + columnsCount, {'kBuilderBlock--pending': pending }]">
+  <div :class="['kBuilderBlock', 'kBuilderBlock--col-' + columnsCount, {'kBuilderBlock--pending': pending }, 'kBuilderBlock--'+ status]">
     <div :class="'kBuilderBlock__header kBuilderBlock__header--col-' + columnsCount" >
       <k-icon 
         type="sort" 
@@ -163,6 +163,19 @@ export default {
       }
       return fieldSets
     },
+    status() {
+      if(this.expanded == true) {
+        if(this.previewHeight > 0) {
+          return 'preview'
+        }
+        else {
+          return 'edit'
+        }
+      }
+      else {
+        return 'closed'
+      }
+    }
   },
   methods: {
     onBlockInput(event) {
@@ -251,6 +264,20 @@ export default {
     &--pending
       opacity: 0;
       transform: translateY(5%);
+
+    &.kBuilderBlock--closed
+      .kBuilderBlock__header
+        background: white;
+    &.kBuilderBlock--preview
+      .kBuilderBlock__header
+        background: white;
+        border-bottom: 1px dashed #ccc;
+    &.kBuilderBlock--edit
+      box-shadow: 0 0 0 3px rgba(22,23,26,.05);
+      border: 1px solid #ccc;
+      .kBuilderBlock__header
+        border-bottom: 1px dashed #ccc;
+
     &__label
       display flex
       cursor pointer
@@ -267,6 +294,7 @@ export default {
       // color: #999;
       display: flex;
       align-items: center;
+      background: #efefef;
       &--col-1
         padding-left: .75rem;
     &__actions
@@ -295,15 +323,10 @@ export default {
         background-color transparent
         border-radius 0
     &__form
-      padding: .625rem .75rem 2.25rem .75rem ;
+      padding: 2rem 2.5rem 2.5rem;
+      background: #efefef;
     .sortable-drag
       cursor: -webkit-grab;
-    &
-    .kBuilderBlock
-    .k-structure
-    .k-card
-    .k-list-item
-      box-shadow: 0 2px 5px rgba(22,23,26,.15), 0 0 0 1px rgba(22,23,26,.05)
     .k-structure
       margin-left: 25px;
   .sortable-ghost > .k-column-content > .kBuilderBlock

@@ -134,9 +134,9 @@ export default {
     },
     addBlockButtonLabel() {
       if (this.fieldsetCount == 1) {
-        return `Add ${this.fieldsets[Object.keys(this.fieldsets)[0]].label}`
+        return `${this.$t('add')} ${this.fieldsets[Object.keys(this.fieldsets)[0]].label}`
       } else {
-        return 'Add'
+        return this.$t('add')
       }
     },
     supportedBlockTypes() {

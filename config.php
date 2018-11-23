@@ -58,27 +58,31 @@ Kirby::plugin('timoetting/testfield', [
       ],
     ],
   ],
-  'routes' => [
-    [
-      'pattern' => 'api/kirby-builder/preview',
-      'method' => 'POST',
-      'action'  => function () {
-        $existingPreviews = kirby()->session()->data()->get('kirby-builder-previews');
-        $newPreview = [get('blockUid') => get('blockcontent')];
-        if (isset($existingPreviews)) {
-          $updatedPreviews = $existingPreviews;
-          $updatedPreviews[get('blockUid')] = get('blockcontent');
-          kirby()->session()->set('kirby-builder-previews', $updatedPreviews);
-        } else {
+  'api' => [
+    'routes' => [
+      [
+        'pattern' => 'kirby-builder/preview',
+        'method' => 'POST',
+        'action'  => function () {
+          $existingPreviews = kirby()->session()->data()->get('kirby-builder-previews');
           $newPreview = [get('blockUid') => get('blockcontent')];
-          kirby()->session()->set('kirby-builder-previews', $newPreview);
+          if (isset($existingPreviews)) {
+            $updatedPreviews = $existingPreviews;
+            $updatedPreviews[get('blockUid')] = get('blockcontent');
+            kirby()->session()->set('kirby-builder-previews', $updatedPreviews);
+          } else {
+            $newPreview = [get('blockUid') => get('blockcontent')];
+            kirby()->session()->set('kirby-builder-previews', $newPreview);
+          }
+          return [
+            'code' => 200,
+            'status' => 'ok'
+          ];
         }
-        return [
-          'code' => 200,
-          'status' => 'ok'
-        ];
-      }
+      ],
     ],
+  ],
+  'routes' => [
     [
       'pattern' => 'kirby-builder-preview/(:any)',
       'method' => 'GET',
@@ -106,7 +110,15 @@ Kirby::plugin('timoetting/testfield', [
         return $responsePage;
       }
     ],
-  ],   
+  ], 
+  'translations' => [
+    'en' => [
+      'builder.clone' => 'Clone',
+    ],
+    'fr' => [
+      'builder.clone' => 'Dupliquer',
+    ],
+  ],  
   'templates' => [
     'snippet-wrapper' => __DIR__ . '/templates/snippet-wrapper.php'
   ]

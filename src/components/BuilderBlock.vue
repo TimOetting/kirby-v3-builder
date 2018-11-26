@@ -46,14 +46,14 @@
             <k-dropdown-content :ref="'blockActions' + block.uniqueKey">
               <k-dropdown-item 
                 icon="copy" 
-                @click="$emit('cloneBlock', index)"
+                @click="$emit('clone', index)"
               >{{ $t('builder.clone') }}</k-dropdown-item>
               <k-dropdown-item 
                 icon="trash" 
-                @click="$emit('deleteBlock', index)"
+                @click="$emit('delete', index)"
               >{{ $t('delete') }}</k-dropdown-item>
             </k-dropdown-content>
-          </k-dropdown>	
+          </k-dropdown>
         </div>
       </div>
     </div>
@@ -154,8 +154,7 @@ export default {
         for (const tabKey in this.block.tabs) {
           if (this.block.tabs.hasOwnProperty(tabKey)) {
             const tab = this.block.tabs[tabKey];
-            fieldSets.push(this.newFieldSet(tab, tabKey, this.block.content[tabKey]))
-            // fieldSets.push(this.newFieldSet(tab, tabKey, this.block.content))
+            fieldSets.push(this.newFieldSet(tab, tabKey, this.block.content))
           }
         }
       } else if (this.block.fields) {

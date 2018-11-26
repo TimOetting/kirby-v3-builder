@@ -26,15 +26,15 @@
           @click="onClickAddBlock(index)"
         ></div>
         <builder-block 
+          :page-id="pageId" 
+          :page-uid="pageUid" 
           :block="block" 
           :index="index"
-          :columnsCount="columnsCount"
-          :pageUid="pageUid" 
-          :pageId="pageId" 
-          :showPreview.sync="block.showPreview" 
+          :columns-count="columnsCount"
+          :show-preview.sync="block.showPreview" 
           @input="onBlockInput" 
-          @cloneBlock="cloneBlock"
-          @deleteBlock="deleteBlock"/>
+          @clone="cloneBlock"
+          @delete="deleteBlock"/>
         <div 
           v-if="(columnsCount % index == 0 && columnsCount > 1)"
           class="kBuilder__inlineAddButton kBuilder__inlineAddButton--vertical kBuilder__inlineAddButton--after"
@@ -189,11 +189,10 @@ export default {
         })
       } else if (fieldSet.tabs) {
         for (const tabName in fieldSet.tabs) {
-          content[tabName] = {}
           if (fieldSet.tabs.hasOwnProperty(tabName)) {
             const tab = fieldSet.tabs[tabName];
             Object.keys(tab.fields).forEach(fieldName => {
-              content[tabName][fieldName] = tab.fields[fieldName].value || tab.fields[fieldName].default || ''
+              content[fieldName] = tab.fields[fieldName].value || tab.fields[fieldName].default || ''
             })
           }
         }
@@ -208,6 +207,11 @@ export default {
       this.blocks[index + 1].uniqueKey = this.lastUniqueKey++
       this.$emit("input", this.val);
     },
+    deleteBlock(index) {
+      this.clearLocalUiStates(this.blocks[index])
+      this.blocks.splice(index, 1);
+      this.$emit("input", this.val);
+    },
     deepRemoveProperty(obj, property) {
       Object.keys(obj).forEach( (prop) => {
         if (prop === property) {
@@ -216,11 +220,6 @@ export default {
           this.deepRemoveProperty(obj[prop], property)
         }
       })
-    },
-    deleteBlock(index) {
-      this.clearLocalUiStates(this.blocks[index])
-      this.blocks.splice(index, 1);
-      this.$emit("input", this.val);
     },
     clearLocalUiStates(obj) {
       for (const prop in obj) {

@@ -36,6 +36,24 @@ Kirby::plugin('timoetting/builder', [
         },
         'pageId' => function () {
           return $this->model()->id();
+        },
+        'cssUrls' => function() {
+            $cssUrls = array_map(function($arr) {
+                return array_key_exists('css', $arr['preview']) ? $arr['preview']['css'] : '';
+            }, $this->fieldsets);
+            $cssUrls = array_filter($cssUrls);
+            $cssUrls = array_unique($cssUrls);
+            $cssUrls = array_values($cssUrls);
+            return $cssUrls;
+        },
+        'jsUrls' => function() {
+            $jsUrls = array_map(function($arr) {
+                return array_key_exists('js', $arr['preview']) ? $arr['preview']['js'] : '';
+            }, $this->fieldsets);
+            $jsUrls = array_filter($jsUrls);
+            $jsUrls = array_unique($jsUrls);
+            $jsUrls = array_values($jsUrls);
+            return $jsUrls;
         }
       ],
       'methods' => [
@@ -64,12 +82,13 @@ Kirby::plugin('timoetting/builder', [
   'api' => [
     'routes' => [
       [
-        'pattern' => 'kirby-builder/preview',
+        'pattern' => 'kirby-builder/get-preview',
         'method' => 'POST',
         'action'  => function () {
           $kirby            = kirby();
           $blockUid         = get('blockUid');
-          $blockContent     = get('blockcontent');
+          $blockContent     = get('blockContent');
+          $previewOptions   = get('preview');
           $cache            = $kirby->cache('timoetting.builder');
           $existingPreviews = $cache->get('previews');
 
@@ -81,38 +100,23 @@ Kirby::plugin('timoetting/builder', [
             $newPreview = [$blockUid => $blockContent];
             $cache->set('previews', $newPreview);
           }
-          return [
-            'code' => 200,
-            'status' => 'ok'
-          ];
+
+          $snippet      = $previewOptions['snippet'] ?? null;
+          $modelName    = $previewOptions['modelname'] ?? 'data';
+
+          $page = new Page([
+            'slug'     => 'builder-preview',
+            'template' => 'builder-preview',
+            'content'  => $blockContent,
+          ]);
+
+          return array(
+            'preview' => snippet($snippet, [$modelName => $page->content()], true) 
+          );
         }
       ],
     ],
   ],
-  'routes' => [
-    [
-      'pattern' => 'kirby-builder-preview/(:any)',
-      'method' => 'GET',
-      'action'  => function ($blockUid) {
-        $previews     = kirby()->cache('timoetting.builder')->get('previews');
-        $content      = $previews[$blockUid];
-
-        if(get('pageid'))  { $content['_pageid'] = get('pageid'); }
-        if(get('snippet')) { $content['_snippetpath'] = get('snippet'); }
-        if(get('css'))     { $content['_csspath'] = get('css'); }
-        if(get('js'))      { $content['_jspath'] = get('js'); }
-
-        $content['_modelname'] = get('modelname', 'data');
-
-        $responsePage = new Page([
-          'slug' => 'virtual-reality',
-          'template' => 'snippet-wrapper',
-          'content' => $content
-        ]);
-        return $responsePage;
-      }
-    ],
-  ], 
   'translations' => [
     'en' => [
       'builder.clone' => 'Clone',

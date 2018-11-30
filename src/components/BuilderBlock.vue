@@ -1,5 +1,5 @@
 <template>
-  <div :class="['kBuilderBlock', 'kBuilderBlock--col-' + columnsCount, {'kBuilderBlock--pending': pending }]">
+  <div :class="['kBuilderBlock', 'kBuilderBlock--col-' + columnsCount, {'kBuilderBlock--pending': pending }, 'kBuilderBlock--'+ status]">
     <div :class="'kBuilderBlock__header kBuilderBlock__header--col-' + columnsCount" >
       <k-icon 
         type="sort" 
@@ -26,14 +26,14 @@
             :image="tabImage(fieldSet.icon)"
             @click="displayFieldSet(fieldSet.key); toggleExpand(true)"
             class="kBuilderBlock__actionsButton"
-            :class="{'kBuilderBlock__actionsButton--active': (activeFieldSet == fieldSet.key && expanded )}"
+            :class="{'kBuilderBlock__actionsButton--active': isEdit}"
           >{{fieldSet.label}}</k-button>
           <k-button 
             v-if="block.preview"
             icon="preview" 
             @click="displayPreview()"
             class="kBuilderBlock__actionsButton" 
-            :class="{'kBuilderBlock__actionsButton--active': showPreview && expanded}"
+            :class="{'kBuilderBlock__actionsButton--active': isPreview}"
           ></k-button>
         </k-button-group>
         <div class="kBuilderBlock__control">
@@ -61,15 +61,10 @@
       class="kBuilderBlock__content"
       v-show="expanded"
     >
-      <iframe 
-        v-if="block.preview && showPreview && previewUrl"
-        class="kBuilder__previewFrame" 
-        @loaded="onPreviewLoaded"
-        :style="{height: previewHeight + 'px'}"
-        :src="previewUrl"
-      ></iframe>
+      <div v-if="isPreview" class="kBuilder__previewFrame" v-html="previewContent"></div>
+
       <k-fieldset 
-        v-if="(activeFieldSet === fieldSet.key)" 
+        v-if="isEdit" 
         v-for="fieldSet in fieldSets"
         class="kBuilderBlock__form"
         v-model="fieldSet.model" 
@@ -130,8 +125,8 @@ export default {
       expanded: true,
       previewFrameContent: null,
       previewHeight: 0,
-      previewStored: false,
       showPreview: false,
+      previewContent: ''
     }
   },
   computed: {
@@ -140,13 +135,6 @@ export default {
     },
     extendedUid() {
       return this.pageId.replace('/', '-') + '-' + this._uid
-    },
-    previewUrl() {
-      if (this.previewStored) {
-        return 'kirby-builder-preview/' + this.extendedUid + '?' + this.objectToGetParams(this.block.preview) + '&pageid=' + this.pageId
-      } else {
-        return null
-      }
     },
     fieldSets() {
       let fieldSets = []
@@ -162,6 +150,28 @@ export default {
       }
       return fieldSets
     },
+    status() {
+      if(this.expanded) {
+        if(this.showPreview) {
+          return 'preview'
+        }
+        else {
+          return 'edit'
+        }
+      }
+      else {
+        return 'closed'
+      }
+    },
+    isPreview() {
+      return this.status == 'preview'
+    },
+    isEdit() {
+      return this.status == 'edit'
+    },
+    isClosed() {
+      return this.status == 'closed'
+    }
   },
   methods: {
     onBlockInput(event) {
@@ -170,15 +180,19 @@ export default {
     displayPreview() {
       this.showPreview = true
       this.expanded = true
+      
       let previewData = {
         preview: this.block.preview,
-        blockcontent: this.block.content,
+        pageid: this.pageId,
+        blockContent: this.block.content,
         blockUid: this.extendedUid
       }
-      this.$api.post('kirby-builder/preview', previewData)
-        .then(() => {
-          this.previewStored = true
-        })
+
+      this.$api.post('kirby-builder/get-preview', previewData)
+          .then(response => {
+            this.previewContent = response.preview
+          })
+
       this.storeLocalUiState()
     },
     displayFieldSet(fieldSetKey) {
@@ -208,11 +222,6 @@ export default {
         label: label || fieldSet.label || null,
       }
       return newFieldSet
-    },
-    objectToGetParams(obj) {
-      return Object.keys(obj).map(function (key) {
-        return key + '=' + obj[key];
-      }).join('&');
     },
     storeLocalUiState() {
       let localUiState = {
@@ -250,6 +259,20 @@ export default {
     &--pending
       opacity: 0;
       transform: translateY(5%);
+
+    &.kBuilderBlock--closed
+      .kBuilderBlock__header
+        background: white;
+    &.kBuilderBlock--preview
+      .kBuilderBlock__header
+        background: white;
+        border-bottom: 1px dashed #ccc;
+    &.kBuilderBlock--edit
+      box-shadow: 0 0 0 3px rgba(22,23,26,.05);
+      border: 1px solid #ccc;
+      .kBuilderBlock__header
+        border-bottom: 1px dashed #ccc;
+
     &__label
       display flex
       cursor pointer
@@ -266,6 +289,7 @@ export default {
       // color: #999;
       display: flex;
       align-items: center;
+      background: #efefef;
       &--col-1
         padding-left: .75rem;
     &__actions
@@ -294,15 +318,10 @@ export default {
         background-color transparent
         border-radius 0
     &__form
-      padding: .625rem .75rem 2.25rem .75rem ;
+      padding: 2rem 2.5rem 2.5rem;
+      background: #efefef;
     .sortable-drag
       cursor: -webkit-grab;
-    &
-    .kBuilderBlock
-    .k-structure
-    .k-card
-    .k-list-item
-      box-shadow: 0 2px 5px rgba(22,23,26,.15), 0 0 0 1px rgba(22,23,26,.05)
     .k-structure
       margin-left: 25px;
   .sortable-ghost > .k-column-content > .kBuilderBlock

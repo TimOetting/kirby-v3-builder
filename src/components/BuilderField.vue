@@ -4,6 +4,10 @@
     class="kBuilder"
     :class="'kBuilder--col-' + columnsCount"
   >
+
+    <link v-for="url in cssUrls" rel="stylesheet" :href="url">
+    <script v-for="url in jsUrls" :src="url"></script>
+
     <k-draggable 
       class="kBuilder__blocks k-grid" 
       @end="drag=false" 
@@ -73,6 +77,8 @@ export default {
   props: {
     value: String,
     fieldsets: Object,
+    cssUrls: Array,
+    jsUrls: Array,
     columns: Number,
     limit: Number,
     label: String,
@@ -253,7 +259,7 @@ export default {
 .kBuilder__addButton{
   width: 100%;
   background-color: transparent;
-  padding: calc(.625rem * 4) .75rem;
+  padding: 1.5rem .75rem;
   border: 1px dashed #CCC;
   transition: background-color .3s, border-color .3s;
 }
@@ -356,7 +362,6 @@ kBuilder__block:hover .kBuilder__dragDropHandle--col-1{
 
 .kBuilder__previewFrame{
   width: 100%;
-  height: 30px;
   border: none;
   display: block;
 }

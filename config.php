@@ -103,6 +103,7 @@ Kirby::plugin('timoetting/builder', [
 
           $snippet      = $previewOptions['snippet'] ?? null;
           $modelName    = $previewOptions['modelname'] ?? 'data';
+          $originalPage = $kirby->page(get('pageid'));
 
           $page = new Page([
             'slug'     => 'builder-preview',
@@ -111,7 +112,7 @@ Kirby::plugin('timoetting/builder', [
           ]);
 
           return array(
-            'preview' => snippet($snippet, [$modelName => $page->content()], true) 
+            'preview' => snippet($snippet, ['page' => $originalPage, $modelName => $page->content()], true) 
           );
         }
       ],

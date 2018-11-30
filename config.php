@@ -5,7 +5,10 @@ use Kirby\Cms\Blueprint;
 use Kirby\Form\Field;
 use Kirby\Form\Fields;
 
-Kirby::plugin('timoetting/testfield', [
+Kirby::plugin('timoetting/builder', [
+  'options' => array(
+    'cache' => true,
+  ),
   'fields' => [
     'builder' => [
       'props' => [
@@ -64,15 +67,19 @@ Kirby::plugin('timoetting/testfield', [
         'pattern' => 'kirby-builder/preview',
         'method' => 'POST',
         'action'  => function () {
-          $existingPreviews = kirby()->session()->data()->get('kirby-builder-previews');
-          $newPreview = [get('blockUid') => get('blockcontent')];
-          if (isset($existingPreviews)) {
-            $updatedPreviews = $existingPreviews;
-            $updatedPreviews[get('blockUid')] = get('blockcontent');
-            kirby()->session()->set('kirby-builder-previews', $updatedPreviews);
+          $kirby            = kirby();
+          $blockUid         = get('blockUid');
+          $blockContent     = get('blockcontent');
+          $cache            = $kirby->cache('timoetting.builder');
+          $existingPreviews = $cache->get('previews');
+
+          if(isset($existingPreviews)) {
+            $updatedPreviews            = $existingPreviews;
+            $updatedPreviews[$blockUid] = $blockContent;
+            $cache->set('previews', $updatedPreviews);
           } else {
-            $newPreview = [get('blockUid') => get('blockcontent')];
-            kirby()->session()->set('kirby-builder-previews', $newPreview);
+            $newPreview = [$blockUid => $blockContent];
+            $cache->set('previews', $newPreview);
           }
           return [
             'code' => 200,
@@ -87,21 +94,16 @@ Kirby::plugin('timoetting/testfield', [
       'pattern' => 'kirby-builder-preview/(:any)',
       'method' => 'GET',
       'action'  => function ($blockUid) {
-        $content = kirby()->session()->data()->get('kirby-builder-previews')[$blockUid];
-        if (get('pageid')) {
-          $content['_pageid'] = get('pageid');
-        }
-        if (get('snippet')) {
-          $content['_snippetpath'] = get('snippet');
-        }
-        if (get('css')) {
-          $content['_csspath'] = get('css');
-        }
-        if (get('js')) {
-          $content['_jspath'] = get('js');
-        }
-        $content['_modelname'] = (get('modelname')) ? get('modelname') : 'data';
-        $responsePage = page('projects/oceans-are-quite-nice');
+        $previews     = kirby()->cache('timoetting.builder')->get('previews');
+        $content      = $previews[$blockUid];
+
+        if(get('pageid'))  { $content['_pageid'] = get('pageid'); }
+        if(get('snippet')) { $content['_snippetpath'] = get('snippet'); }
+        if(get('css'))     { $content['_csspath'] = get('css'); }
+        if(get('js'))      { $content['_jspath'] = get('js'); }
+
+        $content['_modelname'] = get('modelname', 'data');
+
         $responsePage = new Page([
           'slug' => 'virtual-reality',
           'template' => 'snippet-wrapper',

@@ -107,6 +107,8 @@ Kirby::plugin('timoetting/builder', [
 
           $page = new Page([
             'slug'     => 'builder-preview',
+            'children' => $originalPage->children()->toArray(),
+            'files'    => $originalPage->files()->toArray(),
             'template' => 'builder-preview',
             'content'  => $blockContent,
           ]);

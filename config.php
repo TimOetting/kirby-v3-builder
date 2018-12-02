@@ -39,7 +39,9 @@ Kirby::plugin('timoetting/builder', [
         },
         'cssUrls' => function() {
             $cssUrls = array_map(function($arr) {
-                return array_key_exists('css', $arr['preview']) ? $arr['preview']['css'] : '';
+                if(array_key_exists('preview', $arr)) {
+                	return array_key_exists('css', $arr['preview']) ? $arr['preview']['css'] : '';
+                }
             }, $this->fieldsets);
             $cssUrls = array_filter($cssUrls);
             $cssUrls = array_unique($cssUrls);
@@ -48,7 +50,9 @@ Kirby::plugin('timoetting/builder', [
         },
         'jsUrls' => function() {
             $jsUrls = array_map(function($arr) {
-                return array_key_exists('js', $arr['preview']) ? $arr['preview']['js'] : '';
+                if(array_key_exists('preview', $arr)) {
+                	return array_key_exists('js', $arr['preview']) ? $arr['preview']['js'] : '';
+                }
             }, $this->fieldsets);
             $jsUrls = array_filter($jsUrls);
             $jsUrls = array_unique($jsUrls);

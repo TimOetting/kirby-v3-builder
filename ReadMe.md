@@ -7,32 +7,26 @@ mybuilder:
   label: Page Builder
   type: builder
   columns: 1
-  fieldsets:
+  fields:
     bodytext:
       label: Text Block (without preview but with tabs)
-      tabs:
-        content:
-          label: Content
-          icon: edit
-          fields:
-            text:
-              label: text
-              type: textarea
-        style:
-          label: Style
-          icon: cog
-          fields:
-            fontfamily:
-              label: Font
-              type: select
-              options:
-                helvetica: Helvetica
-                comicsans: Comic Sans
-            fontsize:
-              label: Font Size
-              type: number
+      type: builderSet
+      fields:
+        text:
+          label: text
+          type: textarea
+        fontfamily:
+          label: Font
+          type: select
+          options:
+            helvetica: Helvetica
+            comicsans: Comic Sans
+        fontsize:
+          label: Font Size
+          type: number
     quote:
       label: Quote
+      type: builderSet
       preview:
         snippet: blocks/quote
         css: /assets/css/blocks/quote.css
@@ -45,6 +39,7 @@ mybuilder:
           type: text
     events:
       label: Events
+      type: builderSet
       preview:
         snippet: blocks/events
         css: /assets/css/blocks/events.css
@@ -53,7 +48,7 @@ mybuilder:
           type: builder
           label: Event List
           columns: 2
-          fieldsets:
+          fields:
             event:
               label: Event
               fields:

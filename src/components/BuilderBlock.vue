@@ -85,13 +85,14 @@
 
 <script>
 export default {
-  props: [
-    'block',
-    'index',
-    'columnsCount',
-    'pageUid',
-    'pageId',
-  ],
+  props: {
+    endpoints: Object,
+    block: Object,
+    index: Number,
+    columnsCount: Number,
+    pageUid: String,
+    pageId: String,
+  },
   mounted() {
     if (this.block.isNew) {
       this.$nextTick(function () {
@@ -150,6 +151,7 @@ export default {
     },
     fieldSets() {
       let fieldSets = []
+      let fields = {};
       if (this.block.tabs) {
         for (const tabKey in this.block.tabs) {
           if (this.block.tabs.hasOwnProperty(tabKey)) {
@@ -158,9 +160,21 @@ export default {
           }
         }
       } else if (this.block.fields) {
-        fieldSets.push(this.newFieldSet(this.block, 'content', this.block.content, 'edit', this.$t('edit')))
+        let b = this.block;
+        let bc = this.block.content;
+        Object.keys(this.block.fields).forEach(name => {
+          let field = this.block.fields[name];
+          field.endpoints = {
+            field: field.parent + "/fields/" + b.builderRootName + "+" + b.blockKey + "+" + field.name,
+            // section: ? + "/sections/" + "images",
+            // model: ?
+          };
+          fields[name] = field;
+        });
+        let fs = this.newFieldSet(fields, 'content', bc, 'edit', this.$t('edit'));
+        fieldSets.push(fs);
       }
-      return fieldSets
+      return fieldSets;
     },
   },
   methods: {
@@ -199,9 +213,9 @@ export default {
       }
       this.storeLocalUiState()
     },
-    newFieldSet(fieldSet, key, model, icon, label) {
+    newFieldSet(fields, key, model, icon, label) {
       let newFieldSet = {
-        fields: fieldSet.fields,
+        fields: fields,
         key: key,
         model: model,
         icon: icon || fieldSet.icon || null,

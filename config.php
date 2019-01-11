@@ -7,6 +7,22 @@ use Kirby\Form\Fields;
 
 Kirby::plugin('timoetting/testfield', [
   'fields' => [
+    'builderSet' => [
+      'computed' => [
+        'fields' => function () {
+            return $this->form()->fields()->toArray();
+        },
+      ],
+      'methods' => [
+        'form' => function (array $values = []) {
+            return new Form([
+                'fields' => $this->attrs['fields'],
+                'values' => $values,
+                'model'  => $this->model
+            ]);
+        },
+      ]
+    ],
     'builder' => [
       'props' => [
         'value' => function ($value = null) {
@@ -14,14 +30,8 @@ Kirby::plugin('timoetting/testfield', [
         }
       ],
       'computed' => [
-        'pageUid' => function () {
-          return $this->model()->uid();
-        },
-        'pageId' => function () {
-          return $this->model()->id();
-        },
-        'fieldsets' => function () {
-          $fieldSets = Yaml::decode($this->fieldsets);
+        'fields' => function () {
+          $fieldSets = Yaml::decode($this->fields);
           $fieldSets = $this->extendRecursively($fieldSets);
           return $fieldSets;
         },
@@ -29,9 +39,9 @@ Kirby::plugin('timoetting/testfield', [
           $values = Yaml::decode($this->value);
           $vals = [];
           foreach ($values as $key => $value) {
-            if (array_key_exists('fields', $this->fieldsets[$value['_key']])) {
+            if (array_key_exists('fields', $this->fields[$value['_key']])) {
               $form = new Form([
-                'fields' => $this->fieldsets[$value['_key']]['fields'],
+                'fields' => $this->fields[$value['_key']]['fields'],
                 'values' => $value,
                 'model'  => $this->model() ?? null
               ]);
@@ -45,9 +55,19 @@ Kirby::plugin('timoetting/testfield', [
         },
         'pageId' => function () {
           return $this->model()->id();
+        },
+        'name' => function() {
+          return $this->name();
         }
       ],
       'methods' => [
+        'form' => function (array $values = []) {
+            return new Form([
+                'fields' => $this->attrs['fields'],
+                'values' => $values,
+                'model'  => $this->model
+            ]);
+        },
         'extendRecursively' => function ($properties, $currentPropertiesName = null) {
           foreach ($properties as $propertyName => $property) {
             if(is_array($property)){

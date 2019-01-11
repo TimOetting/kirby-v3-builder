@@ -57,7 +57,7 @@
       <k-list>
         <k-list-item
           class="kBuilder__addBlockButton"
-          v-for="(value, key) in fieldsets" 
+          v-for="(value, key) in fields" 
           :key="key" 
           @click="addBlock(key)"
           :text="value.label"   
@@ -72,19 +72,20 @@ import BuilderBlock from "./BuilderBlock.vue";
 export default {
   props: {
     value: String,
-    fieldsets: Object,
+    fields: Object,
     columns: Number,
     limit: Number,
     label: String,
     preview: Object,
     pageId: String,
     pageUid: String,
+    name: String,
   },
   components: { BuilderBlock },
   mounted() {
     if (this.value) {
       this.value.forEach((block, index) => {
-        let fieldSet = this.fieldsets[block._key]
+        let fieldSet = this.fields[block._key]
         this.blocks.push(this.newBlock(fieldSet, block._key, block, index))
       });
       this.lastUniqueKey = this.value.length
@@ -127,20 +128,20 @@ export default {
       return this.blocks.length
     },
     fieldsetCount() {
-      return Object.keys(this.fieldsets).length
+      return Object.keys(this.fields).length
     },
     fieldsetKeys() {
-      return Object.keys(this.fieldsets)
+      return Object.keys(this.fields)
     },
     addBlockButtonLabel() {
       if (this.fieldsetCount == 1) {
-        return `${this.$t('add')} ${this.fieldsets[Object.keys(this.fieldsets)[0]].label}`
+        return `${this.$t('add')} ${this.fields[Object.keys(this.fields)[0]].label}`
       } else {
         return this.$t('add')
       }
     },
     supportedBlockTypes() {
-      return Object.keys(this.fieldsets)
+      return Object.keys(this.fields)
     }
   },
   methods: {
@@ -173,7 +174,7 @@ export default {
     },
     addBlock(key) {
       let position = this.targetPosition == null ? this.blocks.length : this.targetPosition
-      let fieldSet = this.fieldsets[key]
+      let fieldSet = this.fields[key]
       let newBlock = this.newBlock(fieldSet, key, this.getBlankContent(key, fieldSet), this.lastUniqueKey++)
       newBlock.isNew = true
       this.blocks.splice(position, 0, JSON.parse(JSON.stringify(newBlock)))
@@ -242,7 +243,8 @@ export default {
         label: fieldSet.label,
         uniqueKey: uniqueKey,
         preview: fieldSet.preview,
-        showPreview: false
+        showPreview: false,
+        builderRootName: this.name,
       }
     }
   }

@@ -30,7 +30,7 @@
           >{{fieldSet.label}}</k-button>
           <k-button 
             v-if="block.preview"
-            icon="preview" 
+            icon="preview"
             @click="displayPreview()"
             class="kBuilderBlock__actionsButton" 
             :class="{'kBuilderBlock__actionsButton--active': showPreview && expanded}"
@@ -61,29 +61,32 @@
       class="kBuilderBlock__content"
       v-show="expanded"
     >
-      <iframe 
-        v-if="block.preview && showPreview && previewUrl"
-        class="kBuilder__previewFrame" 
-        @loaded="onPreviewLoaded"
-        :style="{height: previewHeight + 'px'}"
-        :src="previewUrl"
-      ></iframe>
+      <builder-preview
+        v-if="block.preview"
+        v-show="showPreview"
+        :markup="previewMarkup"
+        :styles="styles"
+        :index="index"
+        :script="script"
+      >
+      </builder-preview>
       <k-fieldset 
         v-if="(activeFieldSet === fieldSet.key)" 
         v-for="fieldSet in fieldSets"
         class="kBuilderBlock__form"
         v-model="fieldSet.model" 
         :value="{}" 
-        :fields="fieldSet.fields" 
+        :fields="fieldSet.fields"
         :validate="true"
         v-on="$listeners"
-        :key="fieldSet.key + _uid" 
+        :key="fieldSet.key + _uid"
       />
     </div>
   </div>
 </template>
 
 <script>
+import BuilderPreview from "./BuilderPreview.vue";
 export default {
   props: [
     'block',
@@ -91,7 +94,12 @@ export default {
     'columnsCount',
     'pageUid',
     'pageId',
+    'styles',
+    'script'
   ],
+  components: {
+    BuilderPreview
+  },
   mounted() {
     if (this.block.isNew) {
       this.$nextTick(function () {
@@ -131,6 +139,7 @@ export default {
       previewFrameContent: null,
       previewHeight: 0,
       previewStored: false,
+      previewMarkup: '',
       showPreview: false,
     }
   },
@@ -170,15 +179,35 @@ export default {
     displayPreview() {
       this.showPreview = true
       this.expanded = true
+      // let previewData = {
+      //   preview: this.block.preview,
+      //   blockContent: this.block.content,
+      //   blockUid: this.extendedUid,
+      //   pageid: this.pageId
+      // }
+      // this.$api.post('kirby-builder/preview', previewData)
+      //   .then(() => {
+        //     this.previewStored = true
+      //   })
+      // let previewData = {
+      //   preview: this.block.preview,
+      //   content: this.block.content,
+      //   pageid: this.pageId
+      //   // blockUid: this.extendedUid
+      // }
       let previewData = {
         preview: this.block.preview,
-        blockcontent: this.block.content,
-        blockUid: this.extendedUid
+        blockContent: this.block.content,
+        blockUid: this.extendedUid,
+        pageid: this.pageId
       }
-      this.$api.post('kirby-builder/preview', previewData)
-        .then(() => {
-          this.previewStored = true
-        })
+      this.$api.post('kirby-builder/rendered-preview', previewData)
+      .then((res) => {
+        console.log('preview res:', res);
+        this.previewMarkup = res.preview
+        this.activeFieldSet = null
+      })
+      // // return 'kirby-builder-preview/' + this.extendedUid + '?' + this.objectToGetParams(this.block.preview) + '&pageid=' + this.pageId
       this.storeLocalUiState()
     },
     displayFieldSet(fieldSetKey) {
@@ -297,7 +326,6 @@ export default {
       padding: .625rem .75rem 2.25rem .75rem ;
     .sortable-drag
       cursor: -webkit-grab;
-    &
     .kBuilderBlock
     .k-structure
     .k-card

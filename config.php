@@ -43,9 +43,26 @@ Kirby::plugin('timoetting/testfield', [
         'pageUid' => function () {
           return $this->model()->uid();
         },
-        'pageId' => function () {
-          return $this->model()->id();
-        }
+        'cssUrls' => function() {
+          $cssUrls = array_map(function($arr) {
+            if(array_key_exists('preview', $arr)) {
+              return array_key_exists('css', $arr['preview']) ? $arr['preview']['css'] : '';
+            }
+          }, $this->fieldsets);
+          $cssUrls = array_filter($cssUrls);
+          $cssUrls = array_unique($cssUrls);
+          return $cssUrls;
+        },
+        'jsUrls' => function() {
+          $jsUrls = array_map(function($arr) {
+            if(array_key_exists('preview', $arr)) {
+              return array_key_exists('js', $arr['preview']) ? $arr['preview']['js'] : '';
+            }
+          }, $this->fieldsets);
+          $jsUrls = array_filter($jsUrls);
+          $jsUrls = array_unique($jsUrls);
+          return $jsUrls;
+        }	        
       ],
       'methods' => [
         'extendRecursively' => function ($properties, $currentPropertiesName = null) {
@@ -103,6 +120,41 @@ Kirby::plugin('timoetting/testfield', [
           ];
         }
       ],
+      [
+        'pattern' => 'kirby-builder/rendered-preview',
+        'method' => 'POST',
+        'action'  => function () {
+          $kirby            = kirby();
+          $blockUid         = get('blockUid');
+          $blockContent     = get('blockContent');
+          $previewOptions   = get('preview');
+          $cache            = $kirby->cache('timoetting.builder');
+          $existingPreviews = $cache->get('previews');
+          if(isset($existingPreviews)) {
+            $updatedPreviews            = $existingPreviews;
+            $updatedPreviews[$blockUid] = $blockContent;
+            $cache->set('previews', $updatedPreviews);
+          } else {
+            $newPreview = [$blockUid => $blockContent];
+            $cache->set('previews', $newPreview);
+          }
+          $snippet      = $previewOptions['snippet'] ?? null;
+          $modelName    = $previewOptions['modelname'] ?? 'data';
+          $originalPage = $kirby->page(get('pageid'));
+          $page = new Page([
+            'slug'     => 'builder-preview',
+            'template' => 'builder-preview',
+            'content'  => $blockContent,
+          ]);
+          return array(
+            'preview' => snippet($snippet, ['page' => $originalPage, $modelName => $page->content()], true) ,
+            'content' => get('blockContent')
+          );
+          // return array(
+          //   'preview' => snippet($snippet, ['page' => $originalPage, $modelName => $page->content()], true) 
+          // );
+        }
+      ],
     ],
   ],
   'routes' => [
@@ -124,13 +176,30 @@ Kirby::plugin('timoetting/testfield', [
           $content['_jspath'] = get('js');
         }
         $content['_modelname'] = (get('modelname')) ? get('modelname') : 'data';
-        $responsePage = page('projects/oceans-are-quite-nice');
         $responsePage = new Page([
           'slug' => 'virtual-reality',
           'template' => 'snippet-wrapper',
           'content' => $content
         ]);
         return $responsePage;
+      }
+    ],
+    [
+      'pattern' => 'kirby-builder-frame',
+      'method' => 'GET',
+      'action'  => function () {
+        return '<!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="X-UA-Compatible" content="ie=edge">
+            <title>Document</title>
+          </head>
+          <body>
+            hey
+          </body>
+          </html>';
       }
     ],
   ], 

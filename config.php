@@ -5,7 +5,7 @@ use Kirby\Cms\Blueprint;
 use Kirby\Form\Field;
 use Kirby\Form\Fields;
 
-Kirby::plugin('timoetting/testfield', [
+Kirby::plugin('timoetting/kirbybuilder', [
   'fields' => [
     'builder' => [
       'props' => [
@@ -14,11 +14,14 @@ Kirby::plugin('timoetting/testfield', [
         }
       ],
       'computed' => [
+        'pageId' => function () {
+          return $this->model()->id();
+        },
         'pageUid' => function () {
           return $this->model()->uid();
         },
-        'pageId' => function () {
-          return $this->model()->id();
+        'encodedPageId' => function () {
+          return str_replace('/', '+', $this->model()->id());
         },
         'fieldsets' => function () {
           $fieldSets = Yaml::decode($this->fieldsets);
@@ -40,9 +43,6 @@ Kirby::plugin('timoetting/testfield', [
           }
           return $vals;
         },
-        'pageUid' => function () {
-          return $this->model()->uid();
-        },
         'cssUrls' => function() {
           $cssUrls = array_map(function($arr) {
             if(array_key_exists('preview', $arr)) {
@@ -50,7 +50,7 @@ Kirby::plugin('timoetting/testfield', [
             }
           }, $this->fieldsets);
           $cssUrls = array_filter($cssUrls);
-          $cssUrls = array_unique($cssUrls);
+          // $cssUrls = array_unique($cssUrls);
           return $cssUrls;
         },
         'jsUrls' => function() {
@@ -150,9 +150,17 @@ Kirby::plugin('timoetting/testfield', [
             'preview' => snippet($snippet, ['page' => $originalPage, $modelName => $page->content()], true) ,
             'content' => get('blockContent')
           );
-          // return array(
-          //   'preview' => snippet($snippet, ['page' => $originalPage, $modelName => $page->content()], true) 
-          // );
+        }
+      ],
+      // mocked validation for file, pages and structure field
+      [
+        'pattern' => 'kirby-builder/pages/(:any)/fields/(:any)/validate',
+        'method' => 'POST',
+        'action'  => function ($fieldPath) {
+          return [
+            'code' => 200,
+            'status' => 'ok'
+          ];
         }
       ],
     ],
@@ -202,6 +210,25 @@ Kirby::plugin('timoetting/testfield', [
           </html>';
       }
     ],
+    // [
+    //   'pattern' => 'kirby-builder/validationtest',
+    //   'method' => 'GET',
+    //   'action'  => function () {                
+    //     $props = [
+    //       'name'  => 'Hi',
+    //       'label' => 'test text field',
+    //       'maxlength' => 2,
+    //       'value'  => 'mein value'
+    //     ];
+    //     $field = new Field('text', $props);
+    //     $field->save();
+    //     $field->validate();
+    //     return [
+    //       'code' => 200,
+    //       'field' => $field->errors()
+    //     ];
+    //   }
+    // ],
   ], 
   'translations' => [
     'en' => [

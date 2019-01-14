@@ -29,11 +29,13 @@
         <builder-block 
           :page-id="pageId" 
           :page-uid="pageUid" 
+          :encoded-page-id="encodedPageId" 
           :block="block" 
           :index="index"
           :columns-count="columnsCount"
           :show-preview.sync="block.showPreview" 
           :styles="cssContents[block.blockKey]"
+          :parentPath="path"
           @input="onBlockInput" 
           @clone="cloneBlock"
           @delete="deleteBlock"
@@ -79,11 +81,9 @@ export default {
     endpoints: Object,
     help: String,
     input: [String, Number],
-    // label: String,
     name: [String, Number],
     required: Boolean,
     type: String,
-
     value: String,
     fieldsets: Object,
     columns: Number,
@@ -92,8 +92,10 @@ export default {
     preview: Object,
     pageId: String,
     pageUid: String,
+    encodedPageId: String,
     cssUrls: String,
-    jsUrls: String
+    jsUrls: String,
+    parentPath: String
   },
   components: { BuilderBlock },
   mounted() {
@@ -126,6 +128,9 @@ export default {
   computed: {
     val() {
       return this.blocks.map(block => block.content)
+    },
+    path() {
+      return (this.parentPath) ? `${this.parentPath}+${this.name}` : this.name
     },
     columnsCount() {
       return this.columns ? this.columns : '1'
@@ -372,10 +377,6 @@ kBuilder__block:hover .kBuilder__dragDropHandle--col-1{
   border-right-width: 2px;
 }
 
-/* .blocklist-item {
-  display: inline-block;
-  margin-right: 10px;
-} */
 .blocklist-enter-active, .blocklist-leave-active {
   transition: all .5s;
 }
@@ -392,28 +393,11 @@ kBuilder__block:hover .kBuilder__dragDropHandle--col-1{
   position: relative;
 }
 
-/* .kBuilder__previewFrame{
-  width: 100%;
-  height: 30px;
-  border: none;
-  display: block;
-}
-.kBuilder__previewFrame--hidden{
-  display: none;
-} */
-
 .kBuilder__blockContent--hidden{
   display: none;
 }
 
-/* .sortable-drag .kBuilderBlock__content{
-  display: none;
-} */
-
 .sortable-ghost .kBuilderPreview__frame{
   pointer-events: none;
 }
-/* .sortable-ghost{
-  display: none;
-} */
 </style>

@@ -4,7 +4,6 @@
       ref="previewFrame" 
       class="kBuilderPreview__frame"
       @sizechange="onResize"
-      @load="onFrameLoad"
       :style="{height: previewHeight + 'px'}"
     ></iframe>
     <script type="text/template" ref="previewFrameContent">
@@ -107,18 +106,10 @@ export default {
         }
       })
     },
-    onFrameLoad() {
-      // console.log('>>>on frame load');
-      // this.updateContent()
-    },
     onResize(event) {
-      // console.log('onResizeCallback', event.detail.height);
-      // this.previewHeight = event.detail.height
-      // this.activeFieldSet = null
       this.resize()
     },
     resize() {
-      // this.previewHeight  = iFrame.contentWindow.document.body.scrollWidth;
       this.previewHeight = this.previewFrameDocument.getElementById("content").scrollHeight;
     }
   },

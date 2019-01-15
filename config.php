@@ -88,9 +88,9 @@ Kirby::plugin('timoetting/testfield', [
       'save' => function ($values = null) {
         $vals = [];
         foreach ($values as $key => $value) {
-          if (array_key_exists('fields', $this->fieldsets[$value['_key']])) {
+          if (array_key_exists('fields', $this->fields[$value['_key']])) {
             $form = new Form([
-              'fields' => $this->fieldsets[$value['_key']]['fields'],
+              'fields' => $this->fields[$value['_key']]['fields'],
               'values' => $value,
               'model'  => $this->model() ?? null
             ]);

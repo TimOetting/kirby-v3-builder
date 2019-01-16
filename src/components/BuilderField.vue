@@ -47,7 +47,7 @@
           @click="onClickAddBlock(index + 1)"
         ></div>
       </k-column >
-      <k-column :width="columnWidth" v-if="!limit || blockCount < limit">
+      <k-column :width="columnWidth" v-if="!max || blockCount < max">
         <k-button 
           icon="add" 
           @click="onClickAddBlock()"
@@ -91,7 +91,7 @@ export default {
     value: String,
     fieldsets: Object,
     columns: Number,
-    limit: Number,
+    max: Number,
     label: String,
     preview: Object,
     pageId: String,

@@ -1,5 +1,5 @@
 {
-  "name": "timoetting/kirby-v3-builder",
+  "name": "timoetting/kirby-builder",
   "type": "plugin",
   "version": "0.0.1",
   "description": "",
@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "composer update --ignore-platform-reqs; composer dumpautoload -o;",
-    "zip": "rm kirby-v3-builder.zip; composer update --ignore-platform-reqs; composer dumpautoload -o; zip -r kirby-v3-builder.zip . -x *.git*; composer dumpautoload -o;"
+    "zip": "rm kirby-builder.zip; composer update --ignore-platform-reqs; composer dumpautoload -o; zip -r kirby-builder.zip . -x *.git*; composer dumpautoload -o;"
   },
   "minimum-stability": "beta"
 }

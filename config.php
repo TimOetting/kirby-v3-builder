@@ -274,7 +274,7 @@ Kirby::plugin('timoetting/kirbybuilder', [
 function fieldFromPath($fieldPath, $page, $fields) {
   $fieldName = array_shift($fieldPath);
   $fieldProps = $fields[$fieldName];
-  if ($fieldProps['type'] === 'builder') {
+  if ($fieldProps['type'] === 'builder' && count($fieldPath) > 0) {
     $fieldsetKey = array_shift($fieldPath);
     $fieldset = $fieldProps['fieldsets'][$fieldsetKey];
     if (array_key_exists('tabs', $fieldset)) {
@@ -286,6 +286,8 @@ function fieldFromPath($fieldPath, $page, $fields) {
       $fieldsetFields = $fieldset['fields'];
     }
     return fieldFromPath($fieldPath, $page, $fieldsetFields);
+  } else if ($fieldProps['type'] === 'structure' && count($fieldPath) > 0) {
+    return fieldFromPath($fieldPath, $page, $fieldProps['fields']);
   } else {
     $fieldProps['model'] = $page;
     return new Field($fieldProps['type'], $fieldProps);

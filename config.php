@@ -1,7 +1,8 @@
 <?php
 
-use Kirby\Form\Form;
 use Kirby\Cms\Blueprint;
+use Kirby\Cms\Api;
+use Kirby\Cms\Form;
 use Kirby\Form\Field;
 use Kirby\Form\Fields;
 
@@ -10,7 +11,7 @@ Kirby::plugin('timoetting/kirbybuilder', [
     'builder' => [
       'props' => [
         'value' => function ($value = null) {
-            return $value;
+          return $value;
         }
       ],
       'computed' => [
@@ -29,17 +30,31 @@ Kirby::plugin('timoetting/kirbybuilder', [
           return $fieldSets;
         },
         'value' => function () {
-          $values = Yaml::decode($this->value);
+          $values = $this->value != null ? Yaml::decode($this->value) : Yaml::decode($this->default);
           $vals = [];
           foreach ($values as $key => $value) {
-            if (array_key_exists('fields', $this->fieldsets[$value['_key']])) {
+            $blockKey = $value['_key'];
+            if (array_key_exists('fields', $this->fieldsets[$blockKey])) {
+              $fields = $this->fieldsets[$blockKey]['fields'];
               $form = new Form([
-                'fields' => $this->fieldsets[$value['_key']]['fields'],
+                'fields' => $this->fieldsets[$blockKey]['fields'],
                 'values' => $value,
                 'model'  => $this->model() ?? null
               ]);
-              $vals[] = $form->values();
+            } 
+            else if (array_key_exists('tabs', $this->fieldsets[$blockKey])) {
+              $fields = [];
+              $tabs = $this->fieldsets[$blockKey]['tabs'];
+              foreach ( $tabs as $tabKey => $tab) {
+                $field = array_merge($fields, $tab['fields']);
+              }
+              $form = new Form([
+                'fields' => $fields,
+                'values' => $value,
+                'model'  => $this->model() ?? null
+              ]);
             }
+            $vals[] = $form->values();
           }
           return $vals;
         },
@@ -50,7 +65,6 @@ Kirby::plugin('timoetting/kirbybuilder', [
             }
           }, $this->fieldsets);
           $cssUrls = array_filter($cssUrls);
-          // $cssUrls = array_unique($cssUrls);
           return $cssUrls;
         },
         'jsUrls' => function() {
@@ -60,7 +74,6 @@ Kirby::plugin('timoetting/kirbybuilder', [
             }
           }, $this->fieldsets);
           $jsUrls = array_filter($jsUrls);
-          $jsUrls = array_unique($jsUrls);
           return $jsUrls;
         }	        
       ],
@@ -85,14 +98,27 @@ Kirby::plugin('timoetting/kirbybuilder', [
       'save' => function ($values = null) {
         $vals = [];
         foreach ($values as $key => $value) {
-          if (array_key_exists('fields', $this->fieldsets[$value['_key']])) {
+          $blockKey = $value['_key'];
+          if (array_key_exists('fields', $this->fieldsets[$blockKey])) {
+            $fields = $this->fieldsets[$blockKey]['fields'];
             $form = new Form([
-              'fields' => $this->fieldsets[$value['_key']]['fields'],
+              'fields' => $fields,
               'values' => $value,
               'model'  => $this->model() ?? null
             ]);
-            $vals[] = $form->data();
+          } else if (array_key_exists('tabs', $this->fieldsets[$blockKey])) {
+            $fields = [];
+            $tabs = $this->fieldsets[$blockKey]['tabs'];
+            foreach ( $tabs as $tabKey => $tab) {
+              $field = array_merge($fields, $tab['fields']);
+            }
+            $form = new Form([
+              'fields' => $fields,
+              'values' => $value,
+              'model'  => $this->model() ?? null
+            ]);
           }
+          $vals[] = $form->data();
         }
         return $vals;
       },
@@ -152,15 +178,20 @@ Kirby::plugin('timoetting/kirbybuilder', [
           );
         }
       ],
-      // mocked validation for file, pages and structure field
       [
-        'pattern' => 'kirby-builder/pages/(:any)/fields/(:any)/validate',
-        'method' => 'POST',
-        'action'  => function ($fieldPath) {
-          return [
-            'code' => 200,
-            'status' => 'ok'
-          ];
+        'pattern' => 'kirby-builder/pages/(:any)/fields/(:any)/(:all?)',
+        'method' => 'ALL',
+        'action'  => function (string $id, string $fieldPath, string $path = null) {            
+          if ($page = $this->page($id)) {
+            $fieldPath = Str::split($fieldPath, '+');
+            $form = Form::for($page);
+            $field = fieldFromPath($fieldPath, $page, $form->fields()->toArray());
+            $fieldApi = $this->clone([
+              'routes' => $field->api(),
+              'data'   => array_merge($this->data(), ['field' => $field])
+            ]);
+            return $fieldApi->call($path, $this->requestMethod(), $this->requestData());
+          }
         }
       ],
     ],
@@ -210,38 +241,53 @@ Kirby::plugin('timoetting/kirbybuilder', [
           </html>';
       }
     ],
-    // [
-    //   'pattern' => 'kirby-builder/validationtest',
-    //   'method' => 'GET',
-    //   'action'  => function () {                
-    //     $props = [
-    //       'name'  => 'Hi',
-    //       'label' => 'test text field',
-    //       'maxlength' => 2,
-    //       'value'  => 'mein value'
-    //     ];
-    //     $field = new Field('text', $props);
-    //     $field->save();
-    //     $field->validate();
-    //     return [
-    //       'code' => 200,
-    //       'field' => $field->errors()
-    //     ];
-    //   }
-    // ],
   ], 
   'translations' => [
     'en' => [
       'builder.clone' => 'Clone',
+      'builder.preview' => 'Preview',
     ],
     'fr' => [
       'builder.clone' => 'Dupliquer',
+      'builder.preview' => 'Aperçu',
     ],
     'de' => [
       'builder.clone' => 'Duplizieren',
+      'builder.preview' => 'Vorschau',
     ],
   ],  
   'templates' => [
     'snippet-wrapper' => __DIR__ . '/templates/snippet-wrapper.php'
+  ],
+  'fieldMethods' => [
+      'toBuilderBlocks' => function ($field) {
+        return $field->toStructure();
+      },
+      'fieldSetKey' => function ($field) {
+        // return $field->_key();
+        return 'holla';
+      }
   ]
 ]);
+
+// example: http://localhost:8889/api/kirby-builder/pages/projects+trees-and-stars-and-stuff/fields/test+events+eventlist+event+downloads
+function fieldFromPath($fieldPath, $page, $fields) {
+  $fieldName = array_shift($fieldPath);
+  $fieldProps = $fields[$fieldName];
+  if ($fieldProps['type'] === 'builder') {
+    $fieldsetKey = array_shift($fieldPath);
+    $fieldset = $fieldProps['fieldsets'][$fieldsetKey];
+    if (array_key_exists('tabs', $fieldset)) {
+      $fieldsetFields = [];
+      foreach ( $fieldset['tabs'] as $tabKey => $tab) {
+        $fieldsetFields = array_merge($fieldsetFields, $tab['fields']);
+      }
+    } else {
+      $fieldsetFields = $fieldset['fields'];
+    }
+    return fieldFromPath($fieldPath, $page, $fieldsetFields);
+  } else {
+    $fieldProps['model'] = $page;
+    return new Field($fieldProps['type'], $fieldProps);
+  }
+}

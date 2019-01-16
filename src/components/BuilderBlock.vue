@@ -6,7 +6,7 @@
     {'kBuilderBlock--previewMode': showPreview && expanded }, 
     {'kBuilderBlock--expanded': expanded },
     {'kBuilderBlock--collapsed': !expanded },
-    {'kBuilderBlock--editMode': showPreview && expanded }
+    {'kBuilderBlock--editMode': !showPreview && expanded }
   ]">
     <div :class="'kBuilderBlock__header kBuilderBlock__header--col-' + columnsCount" >
       <k-icon 
@@ -42,7 +42,7 @@
             @click="displayPreview()"
             class="kBuilderBlock__actionsButton" 
             :class="{'kBuilderBlock__actionsButton--active': showPreview && expanded}"
-          ></k-button>
+          >{{ $t('builder.preview') }}</k-button>
         </k-button-group>
         <div class="kBuilderBlock__control">
           <k-dropdown class="kBuilderBlock__actionsDropDown">
@@ -201,11 +201,9 @@ export default {
       }
       this.$api.post('kirby-builder/rendered-preview', previewData)
       .then((res) => {
-        console.log('preview res:', res);
         this.previewMarkup = res.preview
         this.activeFieldSet = null
       })
-      // // return 'kirby-builder-preview/' + this.extendedUid + '?' + this.objectToGetParams(this.block.preview) + '&pageid=' + this.pageId
       this.storeLocalUiState()
     },
     displayFieldSet(fieldSetKey) {
@@ -306,6 +304,7 @@ export default {
       right: 0;
       top: 0;
       display: flex;
+      z-index 1
     &__actionsGroup
       margin-right 0
       &.k-button-group>.k-button
@@ -316,7 +315,7 @@ export default {
     &__actionsButton
       min-width 38px
       height 38px
-      opacity .5
+      opacity .4
       color rgb(22, 23, 26)
       font-weight 500
       &:hover

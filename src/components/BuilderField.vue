@@ -35,6 +35,7 @@
           :columns-count="columnsCount"
           :show-preview.sync="block.showPreview" 
           :styles="cssContents[block.blockKey]"
+          :script="jsContents[block.blockKey]"
           :parentPath="path"
           @input="onBlockInput" 
           @clone="cloneBlock"
@@ -58,14 +59,17 @@
     </k-draggable>
     <k-dialog 
       ref="dialog" 
+      class="kBuilder__dialog"
+      @open="onOpenDialog"
+      @close="onCloseDialog"
     >
       <k-list>
         <k-list-item
           class="kBuilder__addBlockButton"
           v-for="(value, key) in fieldsets" 
           :key="key" 
-          @click="addBlock(key)"
           :text="value.label"   
+          @click="addBlock(key)"
         />
       </k-list>
     </k-dialog>
@@ -108,6 +112,15 @@ export default {
         this.$set(this.cssContents, fieldSetKey, res)
       })
     }
+    for (const [fieldSetKey, jsUrls] of Object.entries(this.jsUrls)) {
+      fetch(jsUrls.replace(/^\/+/g, ''))//regex removes leading slashes
+      .then((res) => {
+        return res.text();
+      })
+      .then((res) => {
+        this.$set(this.jsContents, fieldSetKey, res)
+      })
+    }
     if (this.value) {
       this.value.forEach((block, index) => {
         let fieldSet = this.fieldsets[block._key]
@@ -123,6 +136,8 @@ export default {
       targetPosition: null,
       lastUniqueKey: 0,
       cssContents: {},
+      jsContents: {},
+      dialogOpen: false
     }
   },
   computed: {
@@ -159,11 +174,7 @@ export default {
       return Object.keys(this.fieldsets)
     },
     addBlockButtonLabel() {
-      if (this.fieldsetCount == 1) {
-        return `${this.$t('add')} ${this.fieldsets[Object.keys(this.fieldsets)[0]].label}`
-      } else {
-        return this.$t('add')
-      }
+      return this.$t('add')
     },
     supportedBlockTypes() {
       return Object.keys(this.fieldsets)
@@ -214,15 +225,23 @@ export default {
         this.$refs.dialog.open()
       }
     },
+    onOpenDialog() {
+      this.dialogOpen = true
+    },
+    onCloseDialog() {
+      this.dialogOpen = false
+    },
     addBlock(key) {
       let position = this.targetPosition == null ? this.blocks.length : this.targetPosition
       let fieldSet = this.fieldsets[key]
       let newBlock = this.newBlock(fieldSet, key, this.getBlankContent(key, fieldSet), this.lastUniqueKey++)
       newBlock.isNew = true
       this.blocks.splice(position, 0, JSON.parse(JSON.stringify(newBlock)))
-      this.$refs.dialog.close()
       this.targetPosition = null
       this.$emit("input", this.val);
+      if (this.dialogOpen) {
+        this.$refs.dialog.close()
+      }
     },
     getBlankContent(key, fieldSet) {
       let content = { '_key': key }
@@ -391,6 +410,11 @@ kBuilder__block:hover .kBuilder__dragDropHandle--col-1{
 
 .kBuilder__column{
   position: relative;
+}
+
+.kBuilder__dialog .k-list-item-image,
+.kBuilder__dialog .k-dialog-button-submit{
+  display: none;
 }
 
 .kBuilder__blockContent--hidden{

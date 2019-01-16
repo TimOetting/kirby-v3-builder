@@ -97,6 +97,9 @@ Kirby::plugin('timoetting/kirbybuilder', [
       ],
       'save' => function ($values = null) {
         $vals = [];
+        if ($values == null) {
+          return $vals;
+        }
         foreach ($values as $key => $value) {
           $blockKey = $value['_key'];
           if (array_key_exists('fields', $this->fieldsets[$blockKey])) {

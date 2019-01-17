@@ -11,8 +11,9 @@
       @update="onBlockMoved"
       @add="onBlockAdded"
       @remove="onBlockRemoved"
+      @move="onMove"
       :move="onMove"
-      @start="onStartDrag"
+      @start.native="onStartDrag"
       :options="draggableOptions"
     >
       <k-column 
@@ -161,7 +162,7 @@ export default {
         forceFallback: true,
         fallbackClass: "sortable-fallback",
         fallbackOnBody: true,
-        scroll: document.querySelector(".k-panel-view")
+        scroll: document.querySelector(".k-panel-view"),
       }
     },
     blockCount() {
@@ -207,14 +208,16 @@ export default {
     onStartDrag(event) {
       const draggedBlockPreviewFrame = event.item.getElementsByClassName('kBuilderPreview__frame')[0]
       if (draggedBlockPreviewFrame) {
-        const originalBlockPreviewFrameDocument = draggedBlockPreviewFrame.contentWindow.document
-        const clonedBlockPreviewFrameDocument = document.getElementsByClassName('sortable-drag')[0]
-                                    .getElementsByClassName('kBuilderPreview__frame')[0]
-                                    .contentWindow
-                                    .document
-        clonedBlockPreviewFrameDocument.open();
-        clonedBlockPreviewFrameDocument.write(originalBlockPreviewFrameDocument.documentElement.innerHTML);
-        clonedBlockPreviewFrameDocument.close();
+        window.requestAnimationFrame(() => {
+          const originalBlockPreviewFrameDocument = draggedBlockPreviewFrame.contentWindow.document
+          const clonedBlockPreviewFrameDocument = document.getElementsByClassName('sortable-drag')[0]
+                                      .getElementsByClassName('kBuilderPreview__frame')[0]
+                                      .contentWindow
+                                      .document
+          clonedBlockPreviewFrameDocument.open();
+          clonedBlockPreviewFrameDocument.write(originalBlockPreviewFrameDocument.documentElement.innerHTML);
+          clonedBlockPreviewFrameDocument.close();
+        });
       }
     },
     onClickAddBlock(position) {
